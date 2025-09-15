@@ -28,8 +28,8 @@
       margin-top: 0;
     }
     button {
-      padding: 10px 20px;
-      margin: 10px 5px;
+      padding: 10px 16px;
+      margin: 8px;
       font-size: 1em;
       border: none;
       border-radius: 8px;
@@ -44,7 +44,7 @@
       color: white;
     }
     .location-btn {
-      background-color: #2196f3;
+      background-color: #1976d2;
       color: white;
     }
     .log {
@@ -61,67 +61,63 @@
 </head>
 <body>
 
-<h1>Clock In/Out Plumbing Crew</h1>
+<h1>Clock In/Out – Plumbing Crew</h1>
+
+<!-- Location Selection -->
+<div style="text-align:center; margin-bottom: 20px;">
+  <strong>Select Location:</strong><br>
+  <button class="location-btn" onclick="selectLocation('12th')">12th</button>
+  <button class="location-btn" onclick="selectLocation('Holt')">Holt</button>
+  <button class="location-btn" onclick="selectLocation('Sycamore')">Sycamore</button>
+  <p id="location-display" style="margin-top: 10px; font-weight: bold; color: #444;"></p>
+</div>
 
 <div class="container">
-  <div class="card" id="Juan-card">
+  <!-- Juan -->
+  <div class="card">
     <h2>Juan</h2>
-    <div>
-      <button class="location-btn" onclick="setLocation('Juan', '12th')">12th</button>
-      <button class="location-btn" onclick="setLocation('Juan', 'Holt')">Holt</button>
-      <button class="location-btn" onclick="setLocation('Juan', 'Sycamore')">Sycamore</button>
-    </div>
-    <button class="clock-in" id="Juan-in" onclick="logTime('Juan', 'in')" disabled>Clock In</button>
+    <button class="clock-in" onclick="logTime('Juan', 'in')" disabled>Clock In</button>
     <button class="clock-out" onclick="logTime('Juan', 'out')">Clock Out</button>
     <div class="log" id="log-Juan"></div>
   </div>
 
-  <div class="card" id="Jeremiah-card">
+  <!-- Jeremiah -->
+  <div class="card">
     <h2>Jeremiah</h2>
-    <div>
-      <button class="location-btn" onclick="setLocation('Jeremiah', '12th')">12th</button>
-      <button class="location-btn" onclick="setLocation('Jeremiah', 'Holt')">Holt</button>
-      <button class="location-btn" onclick="setLocation('Jeremiah', 'Sycamore')">Sycamore</button>
-    </div>
-    <button class="clock-in" id="Jeremiah-in" onclick="logTime('Jeremiah', 'in')" disabled>Clock In</button>
+    <button class="clock-in" onclick="logTime('Jeremiah', 'in')" disabled>Clock In</button>
     <button class="clock-out" onclick="logTime('Jeremiah', 'out')">Clock Out</button>
     <div class="log" id="log-Jeremiah"></div>
   </div>
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdwrCwD1TgsJVU-4cVs-uEa5ZD8kfnTDSlL1itNNgs9IldInyekHvsrPGKhdq9Wfv2aA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // Replace with your script URL
+  let selectedLocation = null;
 
-  const selectedLocations = {};
+  function selectLocation(location) {
+    selectedLocation = location;
+    document.getElementById('location-display').textContent = "Selected Location: " + location;
 
-  function setLocation(name, location) {
-    selectedLocations[name] = location;
-    document.getElementById(`${name}-in`).disabled = false;
-
-    const logDiv = document.getElementById('log-' + name);
-    const logEntry = document.createElement('div');
-    logEntry.textContent = `📍 Location set to: ${location}`;
-    logDiv.prepend(logEntry);
+    // Enable all Clock In buttons
+    document.querySelectorAll('.clock-in').forEach(btn => btn.disabled = false);
   }
 
   function logTime(name, action) {
-    if (!selectedLocations[name]) {
-      alert("Please select a location first.");
+    if (action === 'in' && !selectedLocation) {
+      alert("Please select a location before clocking in.");
       return;
     }
 
-    const dateTime = new Date().toISOString();
-    const displayTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
-
+    const now = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
     const logDiv = document.getElementById('log-' + name);
     const logEntry = document.createElement('div');
-    logEntry.textContent = `[${displayTime}] ${name} clocked ${action.toUpperCase()} at ${selectedLocations[name]}`;
+    logEntry.textContent = `[${now}] ${name} clocked ${action.toUpperCase()} ${action === 'in' ? 'at ' + selectedLocation : ''}`;
     logDiv.prepend(logEntry);
 
     const formData = new URLSearchParams();
     formData.append('name', name);
     formData.append('in_or_out', action);
-    formData.append('location', selectedLocations[name]);
+    formData.append('location', selectedLocation || '');
 
     fetch(SCRIPT_URL, {
       method: 'POST',
@@ -129,10 +125,10 @@
     })
     .then(res => res.json())
     .then(data => {
-      console.log("Submitted to Google Sheet:", data);
+      console.log("Logged:", data);
     })
     .catch(err => {
-      console.error("Error submitting to Google Sheet:", err);
+      console.error("Error logging to sheet:", err);
     });
   }
 </script>
