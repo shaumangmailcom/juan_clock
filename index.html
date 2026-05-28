@@ -9,6 +9,22 @@
       font-family: Arial, sans-serif;
       padding: 20px;
       background: #f0f4f8;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #1e293b;
+    }
+    .location-container {
+      text-align: center; 
+      margin-bottom: 30px;
+      background: white;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     .container {
       display: flex;
@@ -26,6 +42,7 @@
     }
     h2 {
       margin-top: 0;
+      color: #2c3e50;
     }
     button {
       padding: 10px 16px;
@@ -34,6 +51,15 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      font-weight: bold;
+      transition: transform 0.1s ease, opacity 0.2s;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
     .clock-in {
       background-color: #4caf50;
@@ -47,15 +73,27 @@
       background-color: #1976d2;
       color: white;
     }
+    .location-btn.active {
+      background-color: #0d47a1;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    }
     .log {
       margin-top: 15px;
       text-align: left;
-      font-size: 0.9em;
+      font-size: 0.85em;
       background: #f9f9f9;
       padding: 10px;
       border-radius: 8px;
       max-height: 150px;
       overflow-y: auto;
+      border: 1px solid #eef2f6;
+    }
+    .log-item {
+      padding: 4px 0;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .log-item:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -63,17 +101,15 @@
 
 <h1>Clock In/Out – Plumbing Crew</h1>
 
-<!-- Location Selection -->
-<div style="text-align:center; margin-bottom: 20px;">
-  <strong>Select Location:</strong><br>
-  <button class="location-btn" onclick="selectLocation('12th')">12th</button>
-  <button class="location-btn" onclick="selectLocation('Holt')">Holt</button>
-  <button class="location-btn" onclick="selectLocation('Sycamore')">Sycamore</button>
-  <p id="location-display" style="margin-top: 10px; font-weight: bold; color: #444;"></p>
+<div class="location-container">
+  <strong>Select Active Location:</strong><br style="margin-bottom: 8px;">
+  <button class="location-btn" onclick="handleLocationSelect(this, '12th')">12th</button>
+  <button class="location-btn" onclick="handleLocationSelect(this, 'Holt')">Holt</button>
+  <button class="location-btn" onclick="handleLocationSelect(this, 'Sycamore')">Sycamore</button>
+  <p id="location-display" style="margin-top: 10px; font-weight: bold; color: #1976d2;"></p>
 </div>
 
 <div class="container">
-  <!-- Juan -->
   <div class="card">
     <h2>Juan</h2>
     <button class="clock-in" onclick="logTime('Juan', 'in')" disabled>Clock In</button>
@@ -81,7 +117,6 @@
     <div class="log" id="log-Juan"></div>
   </div>
 
-  <!-- Helper -->
   <div class="card">
     <h2>Helper</h2>
     <button class="clock-in" onclick="logTime('Helper', 'in')" disabled>Clock In</button>
@@ -89,57 +124,66 @@
     <div class="log" id="log-Helper"></div>
   </div>
 
-
-  <!-- Helper with blue eyes -->
   <div class="card">
     <h2>Blue Eyes Helper</h2>
     <button class="clock-in" onclick="logTime('Blue Eyes Helper', 'in')" disabled>Clock In</button>
     <button class="clock-out" onclick="logTime('Blue Eyes Helper', 'out')">Clock Out</button>
-    <div class="log" id="log-Blue Eyes Helper"></div>
+    <div class="log" id="log-Blue_Eyes_Helper"></div>
   </div>
-
-  
 </div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8Vxe6ACUYiHQYqZx0BEhdGnSioHXzgM9b7Hhz2k1gOLXB9bwxYZMKKNUWLZ6mcU8fFA/exec"; // Replace with your script URL
-  let selectedLocation = null;
+  // App Web Deployment Execution Target Link
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8Vxe6ACUYiHQYqZx0BEhdGnSioHXzgM9b7Hhz2k1gOLXB9bwxYZMKKNUWLZ6mcU8fFA/exec"; 
+  let currentActiveLocation = null;
 
-  function selectLocation(location) {
-    selectedLocation = location;
+  function handleLocationSelect(element, location) {
+    currentActiveLocation = location;
     document.getElementById('location-display').textContent = "Selected Location: " + location;
 
-    // Enable all Clock In buttons
+    // Reset layout highlighting on all location buttons
+    document.querySelectorAll('.location-btn').forEach(btn => btn.classList.remove('active'));
+    // Highlight the chosen button element
+    element.classList.add('active');
+
+    // Dynamically unlock Clock In functionality across all crew panels
     document.querySelectorAll('.clock-in').forEach(btn => btn.disabled = false);
   }
 
   function logTime(name, action) {
-    if (action === 'in' && !selectedLocation) {
+    if (action === 'in' && !currentActiveLocation) {
       alert("Please select a location before clocking in.");
       return;
     }
 
-    const now = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
-    const logDiv = document.getElementById('log-' + name);
-    const logEntry = document.createElement('div');
-    logEntry.textContent = `[${now}] ${name} clocked ${action.toUpperCase()} ${action === 'in' ? 'at ' + selectedLocation : ''}`;
-    logDiv.prepend(logEntry);
+    const now = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: true });
+    
+    // Safety matching filter tracking conversion (e.g. "Blue Eyes Helper" -> "Blue_Eyes_Helper")
+    const elementTargetId = 'log-' + name.replace(/\s+/g, '_');
+    const logDiv = document.getElementById(elementTargetId);
+    
+    if (logDiv) {
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-item';
+      logEntry.textContent = `[${now}] ${action.toUpperCase()}: ${action === 'in' ? currentActiveLocation : 'Shift Done'}`;
+      logDiv.prepend(logEntry);
+    }
 
+    // Process structured deployment payload tracking data out to Sheets database
     const formData = new URLSearchParams();
     formData.append('name', name);
     formData.append('in_or_out', action);
-    formData.append('location', selectedLocation || '');
+    formData.append('location', action === 'in' ? currentActiveLocation : '');
 
     fetch(SCRIPT_URL, {
       method: 'POST',
       body: formData
     })
-    .then(res => res.json())
-    .then(data => {
-      console.log("Logged:", data);
+    .then(res => {
+      console.log("Transmission initialized successfully.");
     })
     .catch(err => {
-      console.error("Error logging to sheet:", err);
+      console.error("Error logging record transmission sequence:", err);
     });
   }
 </script>
